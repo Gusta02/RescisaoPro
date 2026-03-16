@@ -1,0 +1,40 @@
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .header { text-align: center; font-size: 20px; margin-bottom: 20px; }
+        .section { margin-top: 15px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        .table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        .table th, .table td { border: 1px solid black; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="header">TERMO DE RESCISÃO DE CONTRATO DE LOCAÇÃO</div>
+    
+    <p>Pelo presente instrumento, as partes dão por rescindido o contrato de locação do imóvel vinculado ao locatário <strong>{{ locatario_nome }}</strong>.</p>
+    
+    <div class="section">DADOS DA RESCISÃO</div>
+    <p>Data de Desocupação: {{ data_desocupacao }}</p>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Descrição</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in itens %}
+            <tr>
+                <td>{{ item.descricao }}</td>
+                <td>{{ item.tipo }}</td>
+                <td>R$ {{ item.valor }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <p style="text-align: right; margin-top: 30px;"><strong>VALOR TOTAL: R$ {{ total_final }}</strong></p>
+</body>
+</html>

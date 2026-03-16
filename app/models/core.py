@@ -11,6 +11,8 @@ class Imobiliaria(Base):
     cnpj = Column(String, unique=True, index=True)
     config_calculo = Column(String, default="MES_CIVIL")
 
+    contratos = relationship("Contrato", back_populates="imobiliaria")
+
 class Contrato(Base):
     __tablename__ = "contratos"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -23,13 +25,17 @@ class Contrato(Base):
     prazo_meses = Column(Integer, default=30)
     multa_total_meses = Column(Integer, default=3)
 
+    imobiliaria = relationship("Imobiliaria", back_populates="contratos")
+    rescisoes = relationship("Rescisao", back_populates="contrato")
+
 class Rescisao(Base):
     __tablename__ = "rescisoes"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     contrato_id = Column(UUID(as_uuid=True), ForeignKey("contratos.id"))
     data_desocupacao = Column(Date, nullable=False)
     status = Column(String, default="RASCUNHO")
-    
+
+    contrato = relationship("Contrato", back_populates="rescisoes")
     itens = relationship("ItemRescisao", back_populates="rescisao")
 
 class ItemRescisao(Base):
@@ -41,3 +47,13 @@ class ItemRescisao(Base):
     valor = Column(Numeric(10, 2), nullable=False)
     
     rescisao = relationship("Rescisao", back_populates="itens")
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    imobiliaria_id = Column(UUID(as_uuid=True), ForeignKey("imobiliarias.id"))
+    email = Column(String, unique=True, index=True, nullable=False)
+    senha_hash = Column(String, nullable=False)
+    nome = Column(String)
+
+    imobiliaria = relationship("Imobiliaria")

@@ -1,0 +1,27 @@
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .header { text-align: center; font-weight: bold; font-size: 18px; margin-bottom: 30px; }
+        .clausula { font-weight: bold; margin-top: 15px; }
+        .footer { margin-top: 50px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="header">INSTRUMENTO PARTICULAR DE CONTRATO DE LOCAÇÃO</div>
+    
+    <p><strong>LOCADOR:</strong> {{ imobiliaria_nome }} (Intermediadora)</p>
+    <p><strong>LOCATÁRIO:</strong> {{ locatario_nome }}</p>
+
+    <div class="clausula">CLÁUSULA PRIMEIRA - DO VALOR</div>
+    <p>O valor mensal do aluguel é de R$ {{ valor_aluguel }}, além dos encargos de IPTU (R$ {{ valor_iptu }}) e Condomínio (R$ {{ valor_condominio }}).</p>
+
+    <div class="clausula">CLÁUSULA SEGUNDA - DO PRAZO</div>
+    <p>O presente contrato tem prazo de {{ prazo_meses }} meses, iniciando-se em {{ data_inicio }}.</p>
+
+    <div class="footer">
+        <p>__________________________________________</p>
+        <p>{{ locatario_nome }}</p>
+    </div>
+</body>
+</html>

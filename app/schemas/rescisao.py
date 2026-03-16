@@ -28,3 +28,13 @@ class RescisaoSaveRequest(BaseModel):
     itens_calculados: List[ItemAdicional] # Aluguel, Multa, etc.
     itens_extras: List[ItemAdicional]     # Pintura, Reparos, etc.
     observacoes: Optional[str] = None
+
+class ContratoResponse(BaseModel):
+    id: UUID
+    locatario_nome: str
+    valor_aluguel: Decimal
+    data_inicio: date
+    imobiliaria_id: UUID
+
+    class Config:
+        from_attributes = True

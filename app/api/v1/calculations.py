@@ -6,6 +6,8 @@ from app.services.calculator import RescisaoService
 from app.core.database import get_db
 from app.models.core import Rescisao, ItemRescisao
 from decimal import Decimal
+from fastapi.responses import StreamingResponse
+from app.services.pdf_service import PDFService
 
 router = APIRouter()
 
@@ -85,3 +87,15 @@ async def save_rescisao(payload: RescisaoSaveRequest, db: Session = Depends(get_
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Erro interno ao salvar: {str(e)}")
+
+@router.get("/{rescisao_id}/pdf")
+async def download_rescisao_pdf(rescisao_id: str, db: Session = Depends(get_db)):
+    pdf_buffer = PDFService.gerar_pdf_rescisao(db, rescisao_id)
+    
+    filename = f"Termo_Rescisao_{rescisao_id[:8]}.pdf"
+    
+    return StreamingResponse(
+        pdf_buffer, 
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
