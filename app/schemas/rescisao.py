@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel
 from datetime import date
 from decimal import Decimal
@@ -35,6 +37,17 @@ class ContratoResponse(BaseModel):
     valor_aluguel: Decimal
     data_inicio: date
     imobiliaria_id: UUID
+
+    class Config:
+        from_attributes = True
+
+class RescisaoResponse(BaseModel):
+    id: uuid.UUID
+    contrato_id: uuid.UUID
+    data_desocupacao: date
+    status: str
+    # Opcional: incluir o nome do locatário via relação
+    locatario_nome: Optional[str] = None 
 
     class Config:
         from_attributes = True

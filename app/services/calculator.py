@@ -47,3 +47,15 @@ class RescisaoService:
         
         valor_multa = (multa_cheia / Decimal(prazo_contrato_meses)) * Decimal(meses_restantes)
         return valor_multa.quantize(Decimal("0.01"))
+    
+    @staticmethod
+    def calcular_encargo_proporcional(valor_mensal: float, data_desocupacao: date, modo_comercial: bool) -> float:
+        """Calcula o valor proporcional de IPTU ou Condomínio baseado nos dias do mês de saída."""
+        if not valor_mensal or valor_mensal <= 0:
+            return 0.0
+            
+        dias_usados, dias_no_mes = RescisaoService.calcular_dias_proporcionais(data_desocupacao)
+        
+        if modo_comercial:
+            return (valor_mensal / 30) * dias_usados
+        return (valor_mensal / dias_no_mes) * dias_usados

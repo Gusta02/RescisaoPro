@@ -12,8 +12,13 @@ from app.models.core import Usuario
 router = APIRouter()
 
 @router.post("/")
-async def create_contract(imobiliaria_id: str, payload: ContratoCreate, db: Session = Depends(get_db)):
-    db_item = Contrato(**payload.dict(), imobiliaria_id=imobiliaria_id)
+async def create_contract(
+    payload: ContratoCreate, 
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user) # Segurança extraída do Token
+):
+    # O imobiliaria_id é injetado do usuário logado, impedindo fraude
+    db_item = Contrato(**payload.dict(), imobiliaria_id=current_user.imobiliaria_id)
     db.add(db_item)
     db.commit()
     db.refresh(db_item)
@@ -29,7 +34,20 @@ async def list_contracts(
     return contracts
     
 @router.get("/{contrato_id}/pdf")
-async def download_contrato_pdf(contrato_id: str, db: Session = Depends(get_db)):
+async def download_contrato_pdf(
+    contrato_id: str, 
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    # Validação de posse:
+    contrato = db.query(Contrato).filter(
+        Contrato.id == contrato_id, 
+        Contrato.imobiliaria_id == current_user.imobiliaria_id
+    ).first()
+    
+    if not contrato:
+        raise HTTPException(status_code=403, detail="Acesso negado a este contrato")
+
     pdf_buffer = PDFService.gerar_pdf_contrato(db, contrato_id)
     filename = f"Contrato_{contrato_id[:8]}.pdf"
     
@@ -38,3 +56,20 @@ async def download_contrato_pdf(contrato_id: str, db: Session = Depends(get_db))
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/{contrato_id}", response_model=ContratoResponse)
+async def get_contract_detail(
+    contrato_id: str, 
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    # Busca garantindo o isolamento por imobiliária
+    contract = db.query(Contrato).filter(
+        Contrato.id == contrato_id, 
+        Contrato.imobiliaria_id == current_user.imobiliaria_id
+    ).first()
+    
+    if not contract:
+        raise HTTPException(status_code=404, detail="Contrato não encontrado ou acesso negado")
+    
+    return contract
