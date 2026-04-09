@@ -11,8 +11,13 @@ def gerar_hash_senha(senha: str):
         senha = senha.encode('utf-8')
     return pwd_context.hash(senha)
 
-def verificar_senha(senha_plana: str, senha_hash: str):
+def verificar_senha(senha_plana: str, senha_hash: str) -> bool:
+    """Compara a senha digitada com o hash do banco"""
     return pwd_context.verify(senha_plana, senha_hash)
+
+def get_password_hash(senha: str) -> str:
+    """Gera o hash seguro para salvar no banco de dados"""
+    return pwd_context.hash(senha)
 
 def criar_token_acesso(data: dict):
     para_codificar = data.copy()

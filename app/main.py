@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from app.core.database import engine, Base
 from app.api.v1 import calculations, companies, properties, auth, deps
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.staticfiles import StaticFiles
 
 
 # Nota: Como você está usando Alembic, o create_all é opcional, 
@@ -10,6 +10,8 @@ from fastapi.middleware.cors import CORSMiddleware
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="RescisaoPro API")
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 origins = [
     "http://localhost",

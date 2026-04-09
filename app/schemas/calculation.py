@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
+from uuid import UUID
 
 # O que o Front-end envia
 class CalculationRequest(BaseModel):
@@ -12,7 +13,8 @@ class CalculationRequest(BaseModel):
     data_desocupacao: date
     prazo_contrato_meses: int = 30
     multa_total_meses: int = 3
-    modo_comercial: bool = False  # True = divide por 30, False = dias reais
+    modo_comercial: bool = False  
+    isentar_multa: bool = False
 
 # O que o Front-end recebe (detalhado para gerar valor percebido)
 class CalculationDetail(BaseModel):
