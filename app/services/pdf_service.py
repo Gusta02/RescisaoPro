@@ -45,6 +45,9 @@ class PDFService:
         total_credito = sum(item.valor for item in rescisao.itens if item.tipo == "CREDITO")
         total_final = float(total_debito) - float(total_credito)
 
+        # Formata a data de aprovação se ela existir
+        data_aprov = rescisao.data_aprovacao.strftime("%d/%m/%Y às %H:%M") if rescisao.data_aprovacao else None
+
         # 3. Dados para o Template
         dados_template = {
             "imobiliaria": imobiliaria,
@@ -55,7 +58,10 @@ class PDFService:
             "total_reparos": PDFService._format_currency(total_reparos),
             "total_final": PDFService._format_currency(total_final),
             "total_debito": PDFService._format_currency(total_debito),
-            "total_credito": PDFService._format_currency(total_credito)
+            "total_credito": PDFService._format_currency(total_credito),
+            "status": rescisao.status,
+            "aprovador_nome": rescisao.aprovador.nome if rescisao.aprovador else None,
+            "data_aprovacao": data_aprov
         }
 
         # 4. Renderização e Conversão

@@ -1,13 +1,18 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+import secrets
 from sqlalchemy.orm import Session
-from app.api.v1.deps import get_current_user
 from app.core.database import get_db
+from datetime import datetime, timedelta
+from passlib.context import CryptContext
+from app.api.v1.deps import get_current_user
+from app.schemas.auth import UserCompanyCreate, ResetPasswordRequest, ResetPasswordConfirm
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status
+from app.models.core import Usuario, Imobiliaria, PasswordResetToken
 from app.core.security import verificar_senha, criar_token_acesso, get_password_hash
-from app.models.core import Usuario, Imobiliaria
-from app.schemas.auth import UserCompanyCreate
+
 
 router = APIRouter()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/signup")
 async def signup_new_company(payload: UserCompanyCreate, db: Session = Depends(get_db)):
@@ -69,3 +74,59 @@ async def get_me(current_user: Usuario = Depends(get_current_user)):
         "email": current_user.email,
         "imobiliaria_id": str(current_user.imobiliaria_id)
     }
+
+@router.post("/request-password-reset")
+async def request_password_reset(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    # 1. Verifica se o usuário existe
+    user = db.query(Usuario).filter(Usuario.email == payload.email).first()
+    
+    # Retornamos sucesso mesmo se não existir para evitar "enumeração de e-mails" por hackers
+    if not user:
+        return {"message": "Se o e-mail estiver cadastrado, as instruções serão enviadas."}
+
+    # 2. Gera um token criptograficamente seguro e define validade de 1 hora
+    token = secrets.token_urlsafe(32)
+    expires = datetime.now() + timedelta(hours=1)
+
+    # 3. Salva no banco de dados
+    reset_token = PasswordResetToken(
+        user_id=user.id,
+        token=token,
+        expires_at=expires
+    )
+    db.add(reset_token)
+    db.commit()
+
+    # 4. TODO: Integrar com serviço de e-mail (SendGrid, SES, etc)
+    # Por enquanto, vamos imprimir no terminal para você conseguir testar!
+    print(f"\n[URGENTE] Enviar e-mail para {user.email}")
+    print(f"Link de recuperação: http://seulocalhost:3000/reset-password?token={token}\n")
+
+    return {"message": "Se o e-mail estiver cadastrado, as instruções serão enviadas."}
+
+
+@router.post("/reset-password")
+async def confirm_password_reset(payload: ResetPasswordConfirm, db: Session = Depends(get_db)):
+    # 1. Busca o token no banco validando se existe, se não expirou e se não foi usado
+    token_db = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == payload.token,
+        PasswordResetToken.used == False,
+        PasswordResetToken.expires_at > datetime.now()
+    ).first()
+
+    if not token_db:
+        raise HTTPException(status_code=400, detail="Token inválido ou expirado. Solicite um novo.")
+
+    # 2. Busca o dono do token
+    user = db.query(Usuario).filter(Usuario.id == token_db.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    # 3. Atualiza a senha (Criptografada!)
+    user.senha_hash = pwd_context.hash(payload.nova_senha)
+    
+    # 4. Invalida o token para não ser usado novamente
+    token_db.used = True
+    
+    db.commit()
+    return {"message": "Senha alterada com sucesso! Você já pode fazer login."}
