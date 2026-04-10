@@ -178,6 +178,15 @@
     {% endif %}
 
     <div class="signature-space">
+
+        {% if status == 'FINALIZADO' and aprovador_nome %}
+        <div style="margin-top: 30px; text-align: center; font-size: 9px; color: #555; border-top: 1px dashed #ccc; padding-top: 10px;">
+            📄 <strong>DOCUMENTO AUDITADO E VALIDADO ELETRONICAMENTE</strong><br>
+            Aprovado por: {{ aprovador_nome }} em {{ data_aprovacao }}<br>
+            ID da Rescisão: {{ rescisao.id }}
+        </div>
+        {% endif %}
+        
         <div style="float: left; width: 45%;">
             <div class="line"></div>
             <p style="font-size: 10px;">{{ imobiliaria.nome_fantasia }}</p>

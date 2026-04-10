@@ -9,3 +9,10 @@ class UserCompanyCreate(BaseModel):
     nome: str
     email: EmailStr
     senha: str
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordConfirm(BaseModel):
+    token: str
+    nova_senha: str

@@ -2,7 +2,8 @@
 from typing import Optional
 
 from pydantic import Field
-from sqlalchemy import Boolean, Column, String, Numeric, Date, Integer, ForeignKey, Text
+from datetime import datetime
+from sqlalchemy import Boolean, Column, DateTime, String, Numeric, Date, Integer, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 import uuid
@@ -52,6 +53,8 @@ class Rescisao(Base):
     contas_consumo_quitadas = Column(Boolean, default=False)
     controle_portao_devolvido = Column(Boolean, default=False)
     vistorias_concluidas = Column(Boolean, default=False)
+    aprovado_por = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
+    data_aprovacao = Column(DateTime, nullable=True)
 
 
     contrato = relationship("Contrato", back_populates="rescisoes")
@@ -60,6 +63,7 @@ class Rescisao(Base):
     criado_por = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=True)
     # Relacionamento para facilitar a busca do nome do funcionário
     autor = relationship("Usuario", foreign_keys=[criado_por])
+    aprovador = relationship("Usuario", foreign_keys=[aprovado_por])
     reparos = relationship("ReparoRescisao", back_populates="rescisao", cascade="all, delete-orphan")
 
 class ReparoRescisao(Base):
@@ -99,3 +103,12 @@ class Usuario(Base):
     nome = Column(String)
 
     imobiliaria = relationship("Imobiliaria")
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("usuarios.id"))
+    token = Column(String, unique=True, index=True)
+    expires_at = Column(DateTime)
+    used = Column(Boolean, default=False)

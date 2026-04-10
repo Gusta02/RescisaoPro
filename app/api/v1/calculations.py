@@ -1,4 +1,6 @@
 # app/api/v1/calculations.py
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session, joinedload
 from app.api.v1.deps import get_current_user
@@ -56,7 +58,6 @@ async def delete_reparo(
     db.commit()
 
     return {"message": "Reparo e débito financeiro removidos com sucesso"}
-
 
 @router.post("/simulate", response_model=CalculationResponse)
 async def simulate_rescisao(payload: CalculationRequest):
@@ -132,7 +133,6 @@ async def simulate_rescisao(payload: CalculationRequest):
             itens=itens,
             total_rescisao=round(total_rescisao, 2)
         )
-    
 
     except Exception as e:
         # Log para facilitar sua depuração no terminal
@@ -246,6 +246,32 @@ async def update_rescisao_workflow(
     
     return {"message": "Status do processo atualizado!", "status": rescisao.status}
 
+
+@router.post("/{rescisao_id}/aprovar")
+async def aprovar_rescisao(
+    rescisao_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    # 1. Busca a rescisão
+    rescisao = db.query(Rescisao).join(Contrato).filter(
+        Rescisao.id == rescisao_id,
+        Contrato.imobiliaria_id == current_user.imobiliaria_id
+    ).first()
+
+    if not rescisao:
+        raise HTTPException(status_code=404, detail="Rescisão não encontrada")
+
+    # 2. Regra de Segurança: Só o dono/gerente pode aprovar 
+    # (Aqui poderíamos ter um campo 'role' no Usuario, mas por ora vamos deixar para o dono)
+    
+    rescisao.status = "FINALIZADO"
+    rescisao.aprovado_por = current_user.id
+    rescisao.data_aprovacao = datetime.now()
+
+    db.commit()
+    return {"message": f"Rescisão aprovada com sucesso por {current_user.nome}!"}
+
 @router.get("/{rescisao_id}/pdf")
 async def download_rescisao_pdf(
     rescisao_id: str, 
@@ -334,3 +360,15 @@ async def list_reparos(
     current_user: Usuario = Depends(get_current_user)
 ):
     return db.query(ReparoRescisao).filter(ReparoRescisao.rescisao_id == rescisao_id).all()
+
+
+@router.get("/fila-aprovacao", response_model=List[RescisaoResponse])
+async def fila_de_aprovacao(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Retorna apenas as rescisões que estão aguardando a canetada final do gestor."""
+    return db.query(Rescisao).options(joinedload(Rescisao.contrato)).join(Contrato).filter(
+        Contrato.imobiliaria_id == current_user.imobiliaria_id,
+        Rescisao.status == "AGUARDANDO_APROVACAO"
+    ).order_by(Rescisao.data_desocupacao.asc()).all()
